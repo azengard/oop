@@ -1,5 +1,7 @@
 from itertools import zip_longest
 
+import pytest
+
 
 class Bits(bytes):
     CHUNK = 8
@@ -103,16 +105,14 @@ def adder(n, m):
 
 def subtractor(n, m):
     acc = sum_ = cout = cin = 0
-    cin0 = 1
+    cin = cin0 = 1
 
     for i, (a, b) in enumerate(zip_longest(n, m, fillvalue=0)):
-        b = b ^ cin0
+        b ^= cin0
         sum_, cout = fulladder(a, b, cin)
 
         acc |= sum_ << i
         cin = cout
-
-    acc |= cout << (i + 1)
 
     return acc
 
@@ -127,6 +127,19 @@ def multiplier(n, m):
         shifter += 1
 
     return acc.to_number()
+
+
+# Slow for numbers > Int24. Seaching a faster implementation
+def divider(n, m):
+    if m.to_number() == 0:
+        raise ZeroDivisionError
+
+    count = 0
+    while n.to_number() >= m.to_number():
+        n = Bits(subtractor(n, m))
+        count += 1
+
+    return count
 
 
 def test_how_many_bytes():
@@ -184,6 +197,15 @@ def test_adder():
     assert adder(Bits(255), Bits(1)) == 256
 
 
+def test_subtractor():
+    assert subtractor(Bits(0), Bits(0)) == 0
+    assert subtractor(Bits(1), Bits(1)) == 0
+    assert subtractor(Bits(1), Bits(0)) == 1
+    assert subtractor(Bits(10), Bits(5)) == 5
+    assert subtractor(Bits(255), Bits(1)) == 254
+    assert subtractor(Bits(256), Bits(1)) == 255
+
+
 def test_multiplier():
     assert multiplier(Bits(0), Bits(0)) == 0
     assert multiplier(Bits(1), Bits(0)) == 0
@@ -193,11 +215,13 @@ def test_multiplier():
     assert multiplier(Bits(127), Bits(2)) == 254
 
 
-def test_subtractor():
-    # assert subtractor(Bits(0), Bits(0)) == 0
-    # assert subtractor(Bits(1), Bits(0)) == 1
-    # assert subtractor(Bits(0), Bits(1)) == 1
-    # assert subtractor(Bits(1), Bits(1)) == 0
-    assert subtractor(Bits(10), Bits(5)) == 5
-    assert subtractor(Bits(255), Bits(1)) == 254
-    # assert subtractor(Bits(256), Bits(1)) == 255
+def test_divider():
+    with pytest.raises(ZeroDivisionError):
+        divider(Bits(1), Bits(0))
+
+    assert divider(Bits(0), Bits(1)) == 0
+    assert divider(Bits(1), Bits(1)) == 1
+    assert divider(Bits(6), Bits(3)) == 2
+    assert divider(Bits(254), Bits(2)) == 127
+    assert divider(Bits(400), Bits(10)) == 40
+    assert divider(Bits(512), Bits(10)) == 51

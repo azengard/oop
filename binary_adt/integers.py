@@ -3,7 +3,7 @@ from abc import ABC
 import pytest
 
 from binary_adt.adt import IntervalMap
-from binary_adt.binary import Byte, adder, multiplier, Word, Tribyte, DoubleWord
+from binary_adt.binary import Byte, adder, multiplier, Word, Tribyte, DoubleWord, subtractor, divider
 
 
 class Integer(ABC):
@@ -16,11 +16,17 @@ class Integer(ABC):
     def __add__(self, other):
         return self.factory(adder(self.value, other.value))
 
+    def __sub__(self, other):
+        return self.factory(subtractor(self.value, other.value))
+
     def __eq__(self, other):
         return self.value == other.value
 
     def __mul__(self, other):
         return self.factory(multiplier(self.value, other.value))
+
+    def __floordiv__(self, other):
+        return self.factory(divider(self.value, other.value))
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.value!r})'
@@ -71,7 +77,11 @@ def test_int8():
     assert Int8(1) + Int8(1) == Int8(2)
     assert Int8(254) + Int8(1) == Int8(255)
 
+    assert Int8(2) - Int8(1) == Int8(1)
+
     assert Int8(127) * Int8(2) == Int8(254)
+
+    assert Int8(254) // Int8(2) == Int8(127)
 
 
 def test_int16():
@@ -83,7 +93,11 @@ def test_int16():
     assert Int16(0) + Int16(0) == Int16(0)
     assert Int16(255) + Int16(1) == Int16(256)
 
+    assert Int16(512) - Int16(256) == Int16(256)
+
     assert Int16(256) * Int16(2) == Int16(512)
+
+    assert Int16(512) // Int16(2) == Int16(256)
 
 
 def test_int24():
@@ -95,7 +109,11 @@ def test_int24():
     assert Int24(0) + Int24(0) == Int24(0)
     assert Int24(65535) + Int24(1) == Int24(65536)
 
+    assert Int24(131_072) - Int24(65536) == Int24(65536)
+
     assert Int24(65536) * Int24(2) == Int24(131_072)
+
+    # assert Int24(131_072) // Int24(2) == Int24(65536)
 
 
 def test_int32():
@@ -107,7 +125,11 @@ def test_int32():
     assert Int32(0) + Int32(0) == Int32(0)
     assert Int32(16_777_215) + Int32(1) == Int32(16_777_216)
 
+    assert Int32(33_554_432) - Int32(16_777_216) == Int32(16_777_216)
+
     assert Int32(16_777_216) * Int32(2) == Int32(33_554_432)
+
+    # assert Int32(33_554_432) // Int32(2) == Int32(16_777_216)
 
 
 def test_scale_up():
@@ -123,9 +145,13 @@ def test_scale_up():
 
 def test_scale_down():
     assert isinstance(Int8(254) + Int8(1), Int8)
+    assert isinstance(Int8(254) - Int8(1), Int8)
 
     assert isinstance(Int16(254) + Int16(1), Int8)
+    assert isinstance(Int16(256) - Int16(1), Int8)
 
     assert isinstance(Int24(65534) + Int24(1), Int16)
+    assert isinstance(Int24(65536) - Int24(1), Int16)
 
     assert isinstance(Int32(16_777_214) + Int32(1), Int24)
+    assert isinstance(Int32(16_777_216) - Int32(1), Int24)
