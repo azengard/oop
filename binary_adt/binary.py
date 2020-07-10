@@ -57,6 +57,11 @@ class Bits(bytes):
             if byte_number < last_byte:
                 yield from (0 for _ in range(size - count))
 
+    def __reversed__(self):
+        list_ = list(self)
+        for n in reversed(list_):
+            yield n
+
     def __lshift__(self, other):
         return Bits(self.to_number() << other.to_number())
 
@@ -137,24 +142,20 @@ def divider(n, m):
     if m.to_number() == 0:
         raise ZeroDivisionError
 
-    remainder = 0
-    quotient = list(n)
+    rem = quo = 0
 
-    for _ in range(len(quotient)):
-        remainder <<= 1
+    for bit in reversed(n):
+        quo <<= 1
+        rem <<= 1
 
-        if quotient.pop():
-            remainder ^= (1 << 0)
+        if bit:
+            rem ^= (1 << 0)
 
-        if remainder < m.to_number():
-            quotient.insert(0, 0)
-        else:
-            remainder = subtractor(Bits(remainder), m)
-            quotient.insert(0, 1)
+        if rem >= m.to_number():
+            rem = subtractor(Bits(rem), m)
+            quo ^= (1 << 0)
 
-    quotient = int(''.join(str(x) for x in reversed(quotient)), 2)
-
-    return quotient, remainder
+    return quo, rem
 
 
 def test_how_many_bytes():
@@ -193,6 +194,17 @@ def test_bits_iter():
     assert list(Bits(257)) == [1, 0, 0, 0, 0, 0, 0, 0, 1]
     assert list(Bits(256)) == [0, 0, 0, 0, 0, 0, 0, 0, 1]
     assert list(Bits(131_070)) == [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+
+def test_reversed_bits():
+    assert list(reversed(list(Bits(0)))) == [0]
+    assert list(reversed(list(Bits(1)))) == [1]
+    assert list(reversed(list(Bits(2)))) == [1, 0]
+    assert list(reversed(list(Bits(128)))) == [1, 0, 0, 0, 0, 0, 0, 0]
+    assert list(reversed(list(Bits(255)))) == [1, 1, 1, 1, 1, 1, 1, 1]
+    assert list(reversed(list(Bits(257)))) == [1, 0, 0, 0, 0, 0, 0, 0, 1]
+    assert list(reversed(list(Bits(256)))) == [1, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert list(reversed(list(Bits(131_070)))) == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
 
 
 def test_bits_to_number():
