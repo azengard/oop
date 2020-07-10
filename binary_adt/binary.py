@@ -31,10 +31,6 @@ class Bits(bytes):
             l += 1
         return l
 
-    @property
-    def msb(self):
-        return list(self)[-1]
-
     def __repr__(self):
         return f'{self.to_number()}'
 
@@ -99,7 +95,7 @@ def fulladder(a, b, cin):
 
 
 def adder(n, m):
-    acc = sum_ = cout = cin = 0
+    acc = cout = cin = 0
 
     for i, (a, b) in enumerate(zip_longest(n, m, fillvalue=0)):
         sum_, cout = fulladder(a, b, cin)
@@ -113,15 +109,14 @@ def adder(n, m):
 
 
 def subtractor(n, m):
-    acc = sum_ = cout = cin = 0
-    cin = cin0 = 1
+    acc = 0
+    cout = inverter = 1
 
     for i, (a, b) in enumerate(zip_longest(n, m, fillvalue=0)):
-        b ^= cin0
-        sum_, cout = fulladder(a, b, cin)
+        b ^= inverter
+        sum_, cout = fulladder(a, b, cout)
 
         acc |= sum_ << i
-        cin = cout
 
     return acc
 
@@ -213,12 +208,6 @@ def test_bits_to_number():
 
 def test_bits_shift_left():
     assert Bits(1) << Bits(1) == Bits(2)
-
-
-def test_msb():
-    assert Bits(0).msb == 0
-    assert Bits(1).msb == 1
-    assert Bits(2).msb == 1
 
 
 def test_adder():

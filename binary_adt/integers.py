@@ -26,8 +26,8 @@ class Integer(ABC):
         return self.factory(multiplier(self.value, other.value))
 
     def __floordiv__(self, other):
-        quotient, remainder = divider(self.value, other.value)
-        return self.factory(quotient)
+        quo, _ = divider(self.value, other.value)
+        return self.factory(quo)
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.value!r})'
