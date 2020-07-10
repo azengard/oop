@@ -31,6 +31,10 @@ class Bits(bytes):
             l += 1
         return l
 
+    @property
+    def msb(self):
+        return list(self)[-1]
+
     def __repr__(self):
         return f'{self.to_number()}'
 
@@ -129,17 +133,28 @@ def multiplier(n, m):
     return acc.to_number()
 
 
-# Slow for numbers > Int24. Seaching a faster implementation
 def divider(n, m):
     if m.to_number() == 0:
         raise ZeroDivisionError
 
-    count = 0
-    while n.to_number() >= m.to_number():
-        n = Bits(subtractor(n, m))
-        count += 1
+    remainder = 0
+    quotient = list(n)
 
-    return count
+    for _ in range(len(quotient)):
+        remainder <<= 1
+
+        if quotient.pop():
+            remainder ^= (1 << 0)
+
+        if remainder < m.to_number():
+            quotient.insert(0, 0)
+        else:
+            remainder = subtractor(Bits(remainder), m)
+            quotient.insert(0, 1)
+
+    quotient = int(''.join(str(x) for x in reversed(quotient)), 2)
+
+    return quotient, remainder
 
 
 def test_how_many_bytes():
@@ -188,6 +203,12 @@ def test_bits_shift_left():
     assert Bits(1) << Bits(1) == Bits(2)
 
 
+def test_msb():
+    assert Bits(0).msb == 0
+    assert Bits(1).msb == 1
+    assert Bits(2).msb == 1
+
+
 def test_adder():
     assert adder(Bits(0), Bits(0)) == 0
     assert adder(Bits(1), Bits(0)) == 1
@@ -219,9 +240,16 @@ def test_divider():
     with pytest.raises(ZeroDivisionError):
         divider(Bits(1), Bits(0))
 
-    assert divider(Bits(0), Bits(1)) == 0
-    assert divider(Bits(1), Bits(1)) == 1
-    assert divider(Bits(6), Bits(3)) == 2
-    assert divider(Bits(254), Bits(2)) == 127
-    assert divider(Bits(400), Bits(10)) == 40
-    assert divider(Bits(512), Bits(10)) == 51
+    assert divider(Bits(0), Bits(1)) == (0, 0)
+    assert divider(Bits(1), Bits(1)) == (1, 0)
+    assert divider(Bits(6), Bits(3)) == (2, 0)
+    assert divider(Bits(11), Bits(3)) == (3, 2)
+    assert divider(Bits(18), Bits(5)) == (3, 3)
+    assert divider(Bits(42), Bits(6)) == (7, 0)
+    assert divider(Bits(254), Bits(2)) == (127, 0)
+    assert divider(Bits(400), Bits(10)) == (40, 0)
+    assert divider(Bits(512), Bits(10)) == (51, 2)
+    assert divider(Bits(513), Bits(4)) == (128, 1)
+    assert divider(Bits(512), Bits(2)) == (256, 0)
+    assert divider(Bits(131_072), Bits(2)) == (65_536, 0)
+    assert divider(Bits(33_554_432), Bits(2)) == (16_777_216, 0)

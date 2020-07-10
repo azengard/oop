@@ -26,7 +26,8 @@ class Integer(ABC):
         return self.factory(multiplier(self.value, other.value))
 
     def __floordiv__(self, other):
-        return self.factory(divider(self.value, other.value))
+        quotient, remainder = divider(self.value, other.value)
+        return self.factory(quotient)
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.value!r})'
@@ -113,7 +114,7 @@ def test_int24():
 
     assert Int24(65536) * Int24(2) == Int24(131_072)
 
-    # assert Int24(131_072) // Int24(2) == Int24(65536)
+    assert Int24(131_072) // Int24(2) == Int24(65536)
 
 
 def test_int32():
@@ -129,7 +130,7 @@ def test_int32():
 
     assert Int32(16_777_216) * Int32(2) == Int32(33_554_432)
 
-    # assert Int32(33_554_432) // Int32(2) == Int32(16_777_216)
+    assert Int32(33_554_432) // Int32(2) == Int32(16_777_216)
 
 
 def test_scale_up():
